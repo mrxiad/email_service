@@ -296,7 +296,7 @@ func main() {
 		Subject:      "教务处信息推送",
 	}
 
-	fmt.Printf("emailConfig:%v\n", emailConfig)
+	fmt.Print("emailConfig:%v\n", emailConfig)
 
 	// 检查必要的邮件配置是否存在
 	if emailConfig.SMTPHost == "" || emailConfig.SMTPPort == "" || emailConfig.SMTPUsername == "" ||
