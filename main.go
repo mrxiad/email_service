@@ -296,7 +296,14 @@ func main() {
 		Subject:      "教务处信息推送",
 	}
 
-	fmt.Printf("emailConfig:%v\n", emailConfig)
+	// 调试信息
+	fmt.Printf("emailConfig: %+v\n", emailConfig)
+	fmt.Printf("SMTPHost: %s\n", emailConfig.SMTPHost)
+	fmt.Printf("SMTPPort: %s\n", emailConfig.SMTPPort)
+	fmt.Printf("SMTPUsername: %s\n", emailConfig.SMTPUsername)
+	// 不打印 SMTPPassword
+	fmt.Printf("FromEmail: %s\n", emailConfig.FromEmail)
+	fmt.Printf("ToEmail: %s\n", emailConfig.ToEmail)
 
 	// 检查必要的邮件配置是否存在
 	if emailConfig.SMTPHost == "" || emailConfig.SMTPPort == "" || emailConfig.SMTPUsername == "" ||

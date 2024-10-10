@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master  # 替换为您主要使用的分支名称，如 'main'
+    paths-ignore:
+      - data.json  # 忽略对 data.json 的推送，避免无限循环
   schedule:
     - cron: '0 9 * * *'  # 每天 UTC 时间 9:00 执行
   workflow_dispatch:    # 允许手动触发
@@ -12,10 +14,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    environment: email_env  # 指定使用的环境
+
     steps:
       - name: 检出代码
         uses: actions/checkout@v3
-        # 使用默认设置，persist-credentials 默认为 true
+        with:
+          fetch-depth: 0  # 获取完整历史，以便进行提交
 
       - name: 设置 Go 环境
         uses: actions/setup-go@v4
