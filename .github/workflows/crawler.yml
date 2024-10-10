@@ -4,7 +4,7 @@ name: 定期运行爬虫并发送邮件
 on:
   push:
     branches:
-      - main  # 替换为您主要使用的分支名称，如 'master'
+      - master  # 替换为您主要使用的分支名称，如 'master'
   schedule:
     - cron: '0 9 * * *'  # 每天 UTC 时间 9:00 执行
   workflow_dispatch:    # 允许手动触发
