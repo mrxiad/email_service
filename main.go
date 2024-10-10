@@ -202,9 +202,12 @@ func deduplicate(existing, newData []Data) ([]Data, []Data) {
 }
 
 func main() {
-	err := godotenv.Load() //加载环境变量
-	if err != nil {
-		log.Fatalf("Error loading .env file")
+	// 移除或条件加载 .env 文件
+	if _, exists := os.LookupEnv("GITHUB_ACTIONS"); !exists {
+		err := godotenv.Load()
+		if err != nil {
+			log.Fatalf("Error loading .env file: %v", err)
+		}
 	}
 
 	// 定义需要爬取的网站配置
@@ -313,7 +316,7 @@ func main() {
 	}
 
 	// 发送邮件
-	err = sendEmail(emailConfig, bodyBuilder.String())
+	err := sendEmail(emailConfig, bodyBuilder.String())
 	if err != nil {
 		log.Printf("发送邮件失败: %v\n", err)
 		return
