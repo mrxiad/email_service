@@ -1,10 +1,9 @@
 name: 定期运行爬虫并发送邮件
 
-# 触发条件：每天上午9点（UTC时间）、每次代码推送和手动触发
 on:
   push:
     branches:
-      - master  # 替换为您主要使用的分支名称，如 'master'
+      - master  # 替换为您主要使用的分支名称，如 'main'
   schedule:
     - cron: '0 9 * * *'  # 每天 UTC 时间 9:00 执行
   workflow_dispatch:    # 允许手动触发
@@ -16,6 +15,7 @@ jobs:
     steps:
       - name: 检出代码
         uses: actions/checkout@v3
+        # 使用默认设置，persist-credentials 默认为 true
 
       - name: 设置 Go 环境
         uses: actions/setup-go@v4
@@ -34,3 +34,18 @@ jobs:
           FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
           TO_EMAIL: ${{ secrets.TO_EMAIL }}
         run: go run main.go
+
+      - name: 配置 Git 用户
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: 检查并提交 data.json 的更改
+        run: |
+          if [[ `git status --porcelain data.json` ]]; then
+            git add data.json
+            git commit -m "Update data.json by GitHub Actions"
+            git push
+          else
+            echo "No changes to data.json"
+          fi

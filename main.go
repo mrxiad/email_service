@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/joho/godotenv"
 )
 
 // Data 定义爬取的数据结构
@@ -202,12 +201,10 @@ func deduplicate(existing, newData []Data) ([]Data, []Data) {
 }
 
 func main() {
-	// 移除或条件加载 .env 文件
+
 	if _, exists := os.LookupEnv("GITHUB_ACTIONS"); !exists {
-		err := godotenv.Load()
-		if err != nil {
-			log.Fatalf("Error loading .env file: %v", err)
-		}
+		log.Fatalf("Error loading env")
+		return
 	}
 
 	// 定义需要爬取的网站配置
@@ -299,7 +296,7 @@ func main() {
 		Subject:      "教务处信息推送",
 	}
 
-	fmt.Print("emailConfig:%v\n", emailConfig)
+	fmt.Printf("emailConfig:%v\n", emailConfig)
 
 	// 检查必要的邮件配置是否存在
 	if emailConfig.SMTPHost == "" || emailConfig.SMTPPort == "" || emailConfig.SMTPUsername == "" ||
