@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -118,9 +119,71 @@ func sendEmail(config EmailConfig, body string) error {
 	// 认证
 	auth := smtp.PlainAuth("", config.SMTPUsername, config.SMTPPassword, config.SMTPHost)
 
-	// 发送邮件
 	to := strings.Split(config.ToEmail, ",")
-	return smtp.SendMail(addr, auth, config.FromEmail, to, []byte(message))
+
+	// 建立SMTP连接（支持465 SMTPS或587 STARTTLS）
+	var client *smtp.Client
+	var err error
+	if config.SMTPPort == "465" {
+		tlsCfg := &tls.Config{ServerName: config.SMTPHost}
+		conn, errDial := tls.Dial("tcp", addr, tlsCfg)
+		if errDial != nil {
+			return fmt.Errorf("连接SMTP服务器失败: %v", errDial)
+		}
+		client, err = smtp.NewClient(conn, config.SMTPHost)
+		if err != nil {
+			return fmt.Errorf("创建SMTP客户端失败: %v", err)
+		}
+	} else {
+		client, err = smtp.Dial(addr)
+		if err != nil {
+			return fmt.Errorf("连接SMTP服务器失败: %v", err)
+		}
+		if ok, _ := client.Extension("STARTTLS"); ok {
+			tlsCfg := &tls.Config{ServerName: config.SMTPHost}
+			if err = client.StartTLS(tlsCfg); err != nil {
+				client.Close()
+				return fmt.Errorf("启动TLS失败: %v", err)
+			}
+		}
+	}
+	defer client.Close()
+
+	if err = client.Auth(auth); err != nil {
+		return fmt.Errorf("SMTP认证失败: %v", err)
+	}
+
+	if err = client.Mail(config.FromEmail); err != nil {
+		return fmt.Errorf("设置发件人失败: %v", err)
+	}
+	for _, recipient := range to {
+		recipient = strings.TrimSpace(recipient)
+		if recipient == "" {
+			continue
+		}
+		if err = client.Rcpt(recipient); err != nil {
+			return fmt.Errorf("设置收件人失败 (%s): %v", recipient, err)
+		}
+	}
+
+	w, err := client.Data()
+	if err != nil {
+		return fmt.Errorf("开启数据流失败: %v", err)
+	}
+	if _, err = w.Write([]byte(message)); err != nil {
+		w.Close()
+		return fmt.Errorf("写入邮件内容失败: %v", err)
+	}
+	if err = w.Close(); err != nil {
+		return fmt.Errorf("关闭数据流失败: %v", err)
+	}
+
+	// 某些服务器可能在 QUIT 时返回异常响应，忽略该错误
+	if err = client.Quit(); err != nil {
+		log.Printf("退出SMTP会话时出现非致命错误: %v\n", err)
+	}
+
+	return nil
 }
 
 // sendEmailHTML 发送HTML格式邮件的函数
@@ -221,13 +284,13 @@ func main() {
 		},
 		{
 			Name:          "信息工程学院公告",
-			URL:           "https://sie.cugb.edu.cn/xygg/",
+			URL:           "https://sai.cugb.edu.cn/xygg/",
 			ListSelector:  "ul#list_container",       // 根据实际HTML结构
 			ItemSelector:  "li.list_cont_li",         // 每个通知项为<li>且具有特定类名
 			TitleSelector: "div.list_i_r > a.p1",     // 标题在div.list_i_r > a.p1
 			LinkSelector:  "div.list_i_r > a.p1",     // 链接在同一个<a>标签上
 			DateSelector:  "div.list_i_r > p",        // 日期在div.list_i_r > p
-			BaseURL:       "https://sie.cugb.edu.cn", // 信息工程学院公告的基础URL
+			BaseURL:       "https://sai.cugb.edu.cn", // 信息工程学院公告的基础URL
 		},
 	}
 
